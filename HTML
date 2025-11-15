@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limkid-X WhatsApp Bot Pairing</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+    #qr { margin-top: 20px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Pair Your WhatsApp with Limkid-X Bot</h1>
+  <button id="pairBtn">Pair WhatsApp</button>
+  <div id="qr"></div>
+  <div id="status"></div>
+
+  <script>
+    const pairBtn = document.getElementById('pairBtn');
+    const qrDiv = document.getElementById('qr');
+    const statusDiv = document.getElementById('status');
+
+    pairBtn.addEventListener('click', async () => {
+      statusDiv.textContent = 'Starting session...';
+      qrDiv.innerHTML = '';
+
+      try {
+        const res = await fetch('/start-session', { method: 'POST' });
+        const data = await res.json();
+
+        if(data.qr) {
+          qrDiv.innerHTML = `<img src="data:image/png;base64,${data.qr}" alt="QR Code">`;
+          statusDiv.textContent = 'Scan the QR code with WhatsApp';
+          
+          // Polling to check if session is connected
+          const interval = setInterval(async () => {
+            const check = await fetch('/check-session');
+            const status = await check.json();
+            if(status.connected) {
+              clearInterval(interval);
+              statusDiv.textContent = '✅ WhatsApp paired successfully!';
+              qrDiv.innerHTML = '';
+            }
+          }, 3000);
+        } else {
+          statusDiv.textContent = 'Error generating QR code';
+        }
+      } catch(err) {
+        console.error(err);
+        statusDiv.textContent = 'Something went wrong!';
+      }
+    });
+  </script>
+</body>
+</html>
